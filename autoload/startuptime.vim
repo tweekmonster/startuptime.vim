@@ -39,18 +39,23 @@ endfunction
 
 
 function! s:init_plugins() abort
-  let vimrc_path = fnamemodify(expand('$MYVIMRC'), ':p:h')
-  let runtime_path = expand('$VIMRUNTIME')
-  let seen = []
+  let vimrc_path = fnamemodify(expand('$MYVIMRC'), ':p:h') . '/'
+  let default_vimrc_path = fnamemodify('~/.vim', ':p')
+  let runtime_path = fnamemodify(expand('$VIMRUNTIME'), ':p')
+  let nvim_config = substitute((exists('$XDG_CONFIG_HOME')
+        \ ? expand('$XDG_CONFIG_HOME') : fnamemodify('~/.config', ':p'))
+        \ . '/nvim/', '//', '/', 'g')
+  let home = fnamemodify('~', ':p')
+  let seen = [vimrc_path, default_vimrc_path, runtime_path, nvim_config]
   let s:plugins = []
 
   if exists('g:plugs')
     for [plugin, info] in items(g:plugs)
-      if index(seen, plugin) != -1 || !has_key(info, 'dir')
+      if !has_key(info, 'dir') || index(seen, info.dir) != -1
         continue
       endif
       call add(s:plugins, [info.dir, plugin])
-      call add(seen, plugin)
+      call add(seen, info.dir)
     endfor
   endif
 
@@ -67,15 +72,13 @@ function! s:init_plugins() abort
       endif
     endif
 
-    if path != vimrc_path && path != runtime_path
+    if isdirectory(path) && index(seen, path . '/') == -1
       for hint in s:plugin_hints
         let hint_path = path . '/' . hint
         if isdirectory(hint_path) || filereadable(hint_path)
           let name = fnamemodify(path, ':t')
-          if index(seen, name) == -1
-            call add(s:plugins, [path . '/', name])
-            call add(seen, name)
-          endif
+          call add(s:plugins, [path . '/', name])
+          call add(seen, path . '/')
           break
         endif
       endfor
@@ -83,13 +86,21 @@ function! s:init_plugins() abort
   endfor
 
   call sort(s:plugins, function('s:plugin_sort'))
-  call add(s:plugins, [runtime_path . '/', '[runtime]'])
-  call add(s:plugins, [vimrc_path . '/', '[vimrc]'])
+  call add(s:plugins, [runtime_path, '[runtime]'])
 
-  let vimrc_path = fnamemodify('~/.vim', ':p')
-  if isdirectory(vimrc_path)
-    call add(s:plugins, [vimrc_path, '[vimrc]'])
+  if isdirectory(nvim_config)
+    call add(s:plugins, [nvim_config, '[vimrc]'])
   endif
+
+  if vimrc_path != home
+    call add(s:plugins, [vimrc_path . '/', '[vimrc]'])
+  endif
+
+  if vimrc_path != default_vimrc_path && isdirectory(default_vimrc_path)
+    call add(s:plugins, [default_vimrc_path, '[vimrc]'])
+  endif
+
+  echomsg string(s:plugins)
 endfunction
 
 
