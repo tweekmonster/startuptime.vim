@@ -41,7 +41,18 @@ endfunction
 function! s:init_plugins() abort
   let vimrc_path = fnamemodify(expand('$MYVIMRC'), ':p:h')
   let runtime_path = expand('$VIMRUNTIME')
+  let seen = []
   let s:plugins = []
+
+  if exists('g:plugs')
+    for [plugin, info] in items(g:plugs)
+      if index(seen, plugin) != -1 || !has_key(info, 'dir')
+        continue
+      endif
+      call add(s:plugins, [info.dir, plugin])
+      call add(seen, plugin)
+    endfor
+  endif
 
   for path in split(&runtimepath, ',')
     let path = fnamemodify(path, ':p')
@@ -61,7 +72,10 @@ function! s:init_plugins() abort
         let hint_path = path . '/' . hint
         if isdirectory(hint_path) || filereadable(hint_path)
           let name = fnamemodify(path, ':t')
-          call add(s:plugins, [path . '/', name])
+          if index(seen, name) == -1
+            call add(s:plugins, [path . '/', name])
+            call add(seen, name)
+          endif
           break
         endif
       endfor
