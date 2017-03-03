@@ -83,8 +83,13 @@ function! s:init_plugins() abort
   endfor
 
   call sort(s:plugins, function('s:plugin_sort'))
-  call add(s:plugins, [vimrc_path . '/', '[vimrc]'])
   call add(s:plugins, [runtime_path . '/', '[runtime]'])
+  call add(s:plugins, [vimrc_path . '/', '[vimrc]'])
+
+  let vimrc_path = fnamemodify('~/.vim', ':p')
+  if isdirectory(vimrc_path)
+    call add(s:plugins, [vimrc_path, '[vimrc]'])
+  endif
 endfunction
 
 
