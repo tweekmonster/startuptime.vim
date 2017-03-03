@@ -198,22 +198,43 @@ function! startuptime#profile(...) abort
 
   call s:init_plugins()
 
-  if executable('ps')
-    let exe = split(system('ps -o command= -p ' . getpid()))[0]
+  if exists('v:progpath') && !empty(v:progpath) && executable(v:progpath)
+    let exe = v:progpath
   else
     let exe = has('nvim') ? 'nvim' : 'vim'
+    if has('win32')
+      let exe .= '.exe'
+    endif
   endif
 
   let tmp = tempname()
-  " Use `script` so Vim doesn't issue a delay warning
-  if has('macunix')
-    let cmd = 'script -q /dev/null ' . exe . ' --startuptime ' . tmp . ' +:qa!'
+  let wintmp = ''
+  let quiet_arg = has('nvim') ? '--headless' : '--not-a-term'
+  call system(exe . ' ' . quiet_arg . ' +qa!')
+
+  if v:shell_error
+    " Use `script` so Vim doesn't issue a delay warning
+    if has('macunix')
+      let cmd = 'script -q /dev/null ' . exe . ' --startuptime ' . tmp . ' +:qa!'
+    elseif has('win32')
+      " Just hope for the best
+      let wintmp = tempname()
+      let cmd = exe . ' --startuptime ' . tmp . ' +:qa! >' . wintmp .' 2>&1'
+    else
+      let cmd = 'script -q -c "' . exe . ' --startuptime ' . tmp . ' +:qa!" /dev/null'
+    endif
   else
-    let cmd = 'script -q -c "' . exe . ' --startuptime ' . tmp . ' +:qa!" /dev/null'
+    let cmd = exe . ' ' . quiet_arg . ' --startuptime ' . tmp . ' +qa!'
   endif
 
+  echomsg 'Sampling with command:' cmd
 
   let [total_time, totals, phase_order, phases] = s:get_samples(cmd, sample_count, tmp)
+
+  if !empty(wintmp) && filereadable(wintmp)
+    call delete(wintmp)
+  endif
+
   let level_time = 1000 / (len(s:levels) - 1)
   let l = float2nr(floor(min([float2nr(total_time), 1000]) / level_time))
   let level = s:levels[l]
