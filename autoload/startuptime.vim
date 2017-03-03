@@ -114,7 +114,7 @@ function! s:get_samples(cmd, count, tmp) abort
   while c < a:count
     let c += 1
     redraw
-    echo 'Sample' c
+    echo printf('Sample %d/%d', c, a:count)
     call system(a:cmd)
 
     if !filereadable(a:tmp)
@@ -239,7 +239,7 @@ function! startuptime#profile(...) abort
   let l = float2nr(floor(min([float2nr(total_time), 1000]) / level_time))
   let level = s:levels[l]
 
-  let lines = [printf('Total Time: %-8.3f -- %s', total_time, level), '']
+  let lines = [printf('Total Time: %8.3f -- %s', total_time, level), '']
 
   let slowest = sort(items(totals), function('s:result_sort'))[:9]
   let width = max(map(copy(slowest), 'len(v:val[0])'))
