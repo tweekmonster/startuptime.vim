@@ -186,7 +186,11 @@ function! startuptime#profile(...) abort
 
   let tmp = tempname()
   " Use `script` so Vim doesn't issue a delay warning
-  let cmd = 'script -q -c "' . exe . ' --startuptime ' . tmp . ' +:qa!" /dev/null'
+  if has('macunix')
+    let cmd = 'script -q /dev/null ' . exe . ' --startuptime ' . tmp . ' +:qa!'
+  else
+    let cmd = 'script -q -c "' . exe . ' --startuptime ' . tmp . ' +:qa!" /dev/null'
+  endif
 
 
   let [total_time, totals, phase_order, phases] = s:get_samples(cmd, sample_count, tmp)
