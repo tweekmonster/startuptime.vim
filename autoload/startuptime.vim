@@ -233,7 +233,7 @@ function! startuptime#profile(...) abort
   enew
   silent %put=lines
   call cursor(1, 1)
-  delete _
+  silent delete _
   set buftype=nofile syntax=help foldmethod=marker foldmarker=>,< nomodified
   normal! zM
 endfunction
