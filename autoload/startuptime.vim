@@ -99,8 +99,6 @@ function! s:init_plugins() abort
   if vimrc_path != default_vimrc_path && isdirectory(default_vimrc_path)
     call add(s:plugins, [default_vimrc_path, '[vimrc]'])
   endif
-
-  echomsg string(s:plugins)
 endfunction
 
 
