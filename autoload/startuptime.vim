@@ -38,8 +38,30 @@ function! s:result_sort(a, b) abort
 endfunction
 
 
-function! s:init_plugins() abort
-  let vimrc_path = fnamemodify(expand('$MYVIMRC'), ':p:h') . '/'
+function! s:execute(cmd) abort
+  if exists('*execute')
+    return execute(a:cmd)
+  endif
+
+  redir => out
+  execute a:cmd
+  redir END
+  return out
+endfunction
+
+
+function! s:get_vimrc() abort
+  if exists('$MYVIMRC') && !empty($MYVIMRC)
+    return expand($MYVIMRC)
+  endif
+
+  return expand(matchstr(s:execute('silent scriptnames'), '1: \zs\f\+'))
+endfunction
+
+
+function! s:init_plugins(vimrc) abort
+  let vimrc_path = substitute(fnamemodify(a:vimrc, ':p:h') . '/',
+        \ '//', '/', 'g')
   let default_vimrc_path = fnamemodify('~/.vim', ':p')
   let runtime_path = fnamemodify(expand('$VIMRUNTIME'), ':p')
   let nvim_config = substitute((exists('$XDG_CONFIG_HOME')
@@ -88,16 +110,16 @@ function! s:init_plugins() abort
   call sort(s:plugins, function('s:plugin_sort'))
   call add(s:plugins, [runtime_path, '[runtime]'])
 
-  if isdirectory(nvim_config)
-    call add(s:plugins, [nvim_config, '[vimrc]'])
-  endif
-
   if vimrc_path != home
-    call add(s:plugins, [vimrc_path . '/', '[vimrc]'])
+    call add(s:plugins, [vimrc_path, '[vimrc]'])
   endif
 
   if vimrc_path != default_vimrc_path && isdirectory(default_vimrc_path)
     call add(s:plugins, [default_vimrc_path, '[vimrc]'])
+  endif
+
+  if isdirectory(nvim_config)
+    call add(s:plugins, [nvim_config, '[vimrc]'])
   endif
 endfunction
 
@@ -121,6 +143,11 @@ function! s:get_samples(cmd, count, tmp) abort
   let total_time = 0
 
   while c < a:count
+    if getchar(0) == 27
+      echomsg printf('Stopped after %d samples', c)
+      break
+    endif
+
     let c += 1
     redraw
     echo printf('Sample %d/%d', c, a:count)
@@ -201,11 +228,26 @@ endfunction
 
 function! startuptime#profile(...) abort
   let sample_count = 10
+  let vimrc = s:get_vimrc()
+  let extra_args = []
+
+  for arg in a:000
+    if arg == '--'
+      call add(extra_args, '')
+    elseif !empty(extra_args)
+      call add(extra_args, arg)
+    elseif arg =~# '\d\+'
+      let sample_count = str2nr(arg)
+    elseif arg =~# '\f\+' && filereadable(expand(arg))
+      let vimrc = expand(arg)
+    endif
+  endfor
+
   if a:0 && type(a:1) == type(0) && a:1 > 0
     let sample_count = a:1
   endif
 
-  call s:init_plugins()
+  call s:init_plugins(vimrc)
 
   if exists('v:progpath') && !empty(v:progpath) && executable(v:progpath)
     let exe = v:progpath
@@ -219,21 +261,30 @@ function! startuptime#profile(...) abort
   let tmp = tempname()
   let wintmp = ''
   let quiet_arg = has('nvim') ? '--headless' : '--not-a-term'
+  let args = ' -i NONE --startuptime ' . tmp . ' +qa!'
+  if !empty(vimrc)
+    let args = ' -u ' . vimrc . args
+  endif
+
+  if !empty(extra_args)
+    let args .= ' ' . join(extra_args, ' ')
+  endif
+
   call system(exe . ' ' . quiet_arg . ' +qa!')
 
   if v:shell_error
     " Use `script` so Vim doesn't issue a delay warning
     if has('macunix')
-      let cmd = 'script -q /dev/null ' . exe . ' --startuptime ' . tmp . ' +:qa!'
+      let cmd = 'script -q /dev/null ' . exe . args
     elseif has('win32')
       " Just hope for the best
       let wintmp = tempname()
-      let cmd = exe . ' --startuptime ' . tmp . ' +:qa! >' . wintmp .' 2>&1'
+      let cmd = exe . args . ' >' . wintmp .' 2>&1'
     else
-      let cmd = 'script -q -c "' . exe . ' --startuptime ' . tmp . ' +:qa!" /dev/null'
+      let cmd = 'script -q -c "' . exe . args . '" /dev/null'
     endif
   else
-    let cmd = exe . ' ' . quiet_arg . ' --startuptime ' . tmp . ' +qa!'
+    let cmd = exe . ' ' . quiet_arg . args
   endif
 
   echomsg 'Sampling with command:' cmd

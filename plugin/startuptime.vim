@@ -1,1 +1,1 @@
-command! -nargs=? StartupTime call startuptime#profile(<args>)
+command! -nargs=* -complete=file StartupTime call startuptime#profile(<f-args>)

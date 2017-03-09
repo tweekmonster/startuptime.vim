@@ -11,9 +11,28 @@ started.  You won't even need to leave the comfort of Vim.
 # Usage
 
 Use the command `:StartupTime` to get an averaged startup profile.  By default,
-it collects 10 samples.  Since it's very important we get an accurate profile,
-we can use `:StartupTime 500` so we're sure to smooth out any environmental
-influence from a spiky system.
+it collects 10 samples.
+
+It accepts multiple arguments.  If a number is found, it is used as the sample
+count.  If a filename is found, it will be used with the `-u` argument while
+profiling.
+
+Example collecting 100 samples and using `~/foo.vim` as the vimrc script:
+
+```vim
+:StartupTime ~/foo.vim 100
+```
+
+If `--` is found in the command arguments, everything after it will be used
+verbatim in the program execution.
+
+Example collecting 100 samples with manual arguments:
+
+```vim
+:StartupTime 100 -- -u ~/foo.vim -i NONE -- ~/foo.vim
+```
+
+Note that the first `--` is dropped.
 
 
 # Details
