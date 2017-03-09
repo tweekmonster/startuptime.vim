@@ -141,6 +141,7 @@ function! s:get_samples(cmd, count, tmp) abort
   let phases = {'startup': {'_files': {}, '_time': 0}}
   let totals = {}
   let total_time = 0
+  let logs = []
 
   while c < a:count
     if getchar(0) == 27
@@ -161,8 +162,10 @@ function! s:get_samples(cmd, count, tmp) abort
     endif
 
     let phase = 'startup'
+    let log = readfile(a:tmp)
+    call add(logs, log)
 
-    for line in readfile(a:tmp)
+    for line in log
       if line =~# '^\%(\d\+\.\d\+\s*\)\{2}:'
         if c == 1
           call add(phase_order, phase)
@@ -222,7 +225,7 @@ function! s:get_samples(cmd, count, tmp) abort
 
   let total_time = total_time / c
 
-  return [total_time, totals, phase_order, phases]
+  return [total_time, totals, phase_order, phases, logs]
 endfunction
 
 
@@ -289,7 +292,9 @@ function! startuptime#profile(...) abort
 
   echomsg 'Sampling with command:' cmd
 
-  let [total_time, totals, phase_order, phases] = s:get_samples(cmd, sample_count, tmp)
+  let [total_time, totals, phase_order,
+        \ phases, logs] = s:get_samples(cmd, sample_count, tmp)
+  let total_samples = len(logs)
 
   if !empty(wintmp) && filereadable(wintmp)
     call delete(wintmp)
@@ -329,6 +334,24 @@ function! startuptime#profile(...) abort
       let lines += ['<']
     endfor
     let lines += ['']
+  endfor
+
+  let banner_line = repeat('=', 34)
+  let lines += ['', printf('%s FULL LOGS %s', banner_line, banner_line), '']
+
+  let i = 0
+  for log in logs
+    let i += 1
+    let lines += [printf('Log %d/%d >', i, total_samples)]
+    let l = 0
+    for line in log
+      if line !~# '^\s*$'
+        let log = log[l :]
+        break
+      endif
+      let l += 1
+    endfor
+    let lines += map(log, '"  " . v:val') + ['<']
   endfor
 
   enew
