@@ -34,6 +34,9 @@ Example collecting 100 samples with manual arguments:
 
 Note that the first `--` is dropped.
 
+To upload the results, you can use a plugin like
+[gist-vim](https://github.com/mattn/gist-vim).
+
 
 # Details
 

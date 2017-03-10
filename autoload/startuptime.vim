@@ -359,5 +359,6 @@ function! startuptime#profile(...) abort
   call cursor(1, 1)
   silent delete _
   set buftype=nofile syntax=help foldmethod=marker foldmarker=>,< nomodified
+  file startup-log.txt
   normal! zM
 endfunction
