@@ -79,6 +79,15 @@ function! s:init_plugins(vimrc) abort
       call add(s:plugins, [info.dir, plugin])
       call add(seen, info.dir)
     endfor
+  elseif exists('g:dein#_plugins')
+    for [plugin, info] in items(g:dein#_plugins)
+      if !has_key(info, 'rtp') || index(seen, info.rtp) != -1
+        continue
+      endif
+      let dir = fnamemodify(info.rtp, ':p')
+      call add(s:plugins, [dir, plugin])
+      call add(seen, dir)
+    endfor
   endif
 
   for path in split(&runtimepath, ',')
