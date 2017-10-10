@@ -1,0 +1,25 @@
+*startuptime.vim.txt*  Breakdown Vim's --startuptime output
+
+Author: Tommy Allen
+License: MIT
+
+INTRODUCTION                                    *startuptime.vim*
+
+Everybody knows that 1ms could mean the difference between life and death in
+Vim. This plugin breaks down the output of --startuptime so you can zero in on
+the scripts that are stealing dozens of your milliseconds each time Vim is
+started. You won't even need to leave the comfort of Vim.
+
+STARTUPTIME USAGE                               *:StartupTime*
+
+:StartupTime [file] [num_samples] [-- extra args]
+			Profile the specified VimScript [file], running its
+			contents [num_samples] times, using the supplied extra
+			arguments verbatim in the program execution.
+
+			If [file] is not specified, your vimrc (as specified
+			by $MYVIMRC) is profiled.
+
+			If [num_samples] is not specified, 10 samples are run.
+
+ vim:tw=78:ts=8:ft=help:norl
