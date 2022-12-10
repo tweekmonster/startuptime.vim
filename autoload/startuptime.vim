@@ -262,7 +262,7 @@ function! startuptime#profile(...) abort
   call s:init_plugins(vimrc)
 
   if exists('v:progpath') && !empty(v:progpath) && executable(v:progpath)
-    let exe = v:progpath
+    let exe = '"'.v:progpath.'"'
   else
     let exe = has('nvim') ? 'nvim' : 'vim'
     if has('win32')
